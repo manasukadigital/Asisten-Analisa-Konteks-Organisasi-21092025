@@ -394,6 +394,13 @@ textarea.editable-input:focus {
     100% { transform: rotate(360deg); }
 }
 
+footer {
+    text-align: center;
+    margin-top: 2rem;
+    color: #888;
+    font-size: 0.9rem;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     body {

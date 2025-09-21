@@ -313,6 +313,7 @@ const App: React.FC = () => {
 
     const exportToPdf = async () => {
         setIsExporting(true);
+        setError(null); // Clear previous errors
         const input = document.getElementById('report-content');
         if (!input) {
             setError("Elemen laporan tidak ditemukan untuk diekspor.");
@@ -325,24 +326,31 @@ const App: React.FC = () => {
             const imgData = canvas.toDataURL('image/png');
 
             const pdf = new jsPDF('p', 'mm', 'a4');
+            const margin = 15; // Set normal margin (15mm) for A4 paper
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = pdf.internal.pageSize.getHeight();
 
+            // Calculate the width of the content area, respecting the left and right margins
+            const contentWidth = pdfWidth - margin * 2;
+            
             const imgProps = pdf.getImageProperties(imgData);
-            const imgWidth = pdfWidth;
-            const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
+            // Calculate the height of the image when scaled to fit the content width, maintaining aspect ratio
+            const totalImageHeight = (imgProps.height * contentWidth) / imgProps.width;
 
-            let heightLeft = imgHeight;
-            let position = 0;
+            let heightLeft = totalImageHeight;
+            let position = margin; // Initial y-position starts at the top margin
 
-            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-            heightLeft -= pdfHeight;
+            // Add the first page (or first part of the image)
+            pdf.addImage(imgData, 'PNG', margin, position, contentWidth, totalImageHeight);
+            // Reduce the remaining height by the visible area on the first page
+            heightLeft -= (pdfHeight - margin);
 
+            // Loop to add new pages if the content is taller than one page
             while (heightLeft > 0) {
-                position = position - pdfHeight;
+                position -= pdfHeight; // Shift the image up by the full page height for the next slice
                 pdf.addPage();
-                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-                heightLeft -= pdfHeight;
+                pdf.addImage(imgData, 'PNG', margin, position, contentWidth, totalImageHeight);
+                heightLeft -= pdfHeight; // Each subsequent page consumes a full page height of the image
             }
             
             const fileName = `Analisis_Konteks_${profile.companyName.replace(/\s+/g, '_') || 'Perusahaan'}.pdf`;
@@ -639,15 +647,20 @@ const App: React.FC = () => {
     };
 
     return (
-        <div className="container">
-            <header>
-                <h1>Asisten Analisis Konteks Organisasi</h1>
-                <p>Sesuai dengan ISO 9001:2015 Klausul 4.1</p>
-            </header>
-            <main>
-                {renderContent()}
-            </main>
-        </div>
+        <>
+            <div className="container">
+                <header>
+                    <h1>Asisten Analisis Konteks Organisasi</h1>
+                    <p>Sesuai dengan ISO 9001:2015 Klausul 4.1</p>
+                </header>
+                <main>
+                    {renderContent()}
+                </main>
+            </div>
+            <footer>
+                <p>developed by Dede Hery Suryana @2025</p>
+            </footer>
+        </>
     );
 };
 
